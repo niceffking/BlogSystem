@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客编辑</title>
+
+    <!-- 引入自己写的样式 -->
+    <link rel="stylesheet" href="css/conmmon.css">
+    <link rel="stylesheet" href="css/blog_edit.css">
+
+    <!-- 引入 editor.md 的依赖 -->
+    <link rel="stylesheet" href="editor.md/css/editormd.min.css" />
+    <script src="js/jquery.min.js"></script>
+    <script src="js/urlUtils.js"></script>
+    <script src="editor.md/editormd.js"></script>
+</head>
+
+<body>
+    <!-- 导航栏 -->
+    <div class="nav">
+        <img src="img/logo2.jpg" alt="">
+        <span class="title">我的博客系统</span>
+        <!-- 用来占据中间位置 -->
+        <span class="spacer"></span>
+        <a href="myblog_list.html">主页</a>
+        <a href="#">注销</a>
+    </div>
+    <!-- 编辑框容器 -->
+    <div class="blog-edit-container">
+        <!-- 标题编辑区 -->
+        <div class="title">
+            <input type="text" placeholder="在这里写下文章标题" id="title">
+            <button onclick="mysub()">提交修改</button>
+        </div>
+        <!-- 创建编辑器标签 -->
+        <div id="editorDiv">
+            <textarea id="editor-markdown" style="display:none;"></textarea>
+        </div>
+    </div>
+
+    <script>
+        var editor;
+        function initEdit(md){
+            // 编辑器设置
+            editor = editormd("editorDiv", {
+                // 这里的尺寸必须在这里设置. 设置样式会被 editormd 自动覆盖掉. 
+                width: "100%",
+                // 高度 100% 意思是和父元素一样高. 要在父元素的基础上去掉标题编辑区的高度
+                height: "calc(100% - 50px)",
+                // 编辑器中的初始内容
+                markdown: md,
+                // 指定 editor.md 依赖的插件路径
+                path: "editor.md/lib/",
+                saveHTMLToTextarea: true // 
+            });
+        }
+        initEdit("# 在这里写下一篇博客"); // 初始化编译器的值
+        // 提交
+        function mysub(){
+            // alert(editor.getValue()); // 获取值
+            // editor.setValue("#123") // 设置值
+            
+            var aid = getParamValue("aid");
+            if (aid == null || aid < 0) {
+                alert("非法参数");
+                return false;
+            }
+            // 非空校验
+            var title = jQuery("#title");
+            if (title.val().trim() == "") {
+                alert("请输入标题!");
+                title.focus
+                return false;
+            }
+            if (editor.getValue() == "") {
+                alert("请输入正文!!");
+                return false;
+            }
+
+            // 将数据传递给后端
+            jQuery.ajax({
+                url: "/article/update",
+                type: "POST",
+                data: {
+                    "id": aid, 
+                    "content": editor.getValue(),
+                    "title": title.val()
+                },
+                success: function (ret) {
+                    if (ret.code == 200 && ret.data == 1) {
+                        alert("修改成功");
+                        location.href = "myblog_list.html";
+                        
+                    } else if(ret.code == -2){
+                        // 添加失败
+                        alert("操作失败 : " + ret.msg);
+                        location.href = "login.html";
+                    } else {
+                        alert("非法参数:" + ret.msg);
+                    }
+                }
+            });
+        }
+
+        function init() {
+            var aid = getParamValue("aid");
+            if (aid == null || aid < 0 ) {
+                alert("非法参数");
+                return false;
+            }
+            jQuery.ajax({
+                url:"/article/getArticle",
+                type:"GET",
+                data: {
+                    "aid":aid
+                },
+                success: function(ret) {
+                    if (ret.code == 200 && ret.data != null) {
+                        // 查询到文章信息
+                        var blog = ret.data;
+                        if (blog == null || blog.length == 0) {
+                            // 获取文章失败
+                            alert("获取文章失败!!");
+                        }
+                        jQuery("#title").val(ret.data.title);
+                        initEdit(ret.data.content);
+                    } else {
+                        alert('查询失败! 原因如下: ' + ret.msg);
+                        location.href = "login.html";
+                    }
+                }
+            });
+        }
+        init();
+    </script>
+</body>
+
+</html>

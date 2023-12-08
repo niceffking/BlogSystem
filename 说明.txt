@@ -1,0 +1,14 @@
+框架:
+jQuery.ajax({
+    url: "接口地址",
+    type: "GET",
+    data:{
+        "username" = "zhangsan",
+        "password" = "123"
+    },
+    success: function(body) {
+        // 后端返回数据给前端的业务处理代码
+
+    }
+
+});
